@@ -1,5 +1,7 @@
 # Messaging Work Queue Mission for Node.js
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/nodeshift-starters/nodejs-messaging-work-queue.svg)](https://greenkeeper.io/)
+
 ## Purpose
 
 This mission booster demonstrates how to dispatch tasks to a scalable
