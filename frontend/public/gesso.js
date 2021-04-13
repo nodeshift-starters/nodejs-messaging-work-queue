@@ -19,7 +19,7 @@
  *
  */
 
-"use strict";
+'use strict';
 
 const $ = document.querySelector.bind(document);
 const $$ = document.querySelectorAll.bind(document);
@@ -33,278 +33,278 @@ Element.prototype.$$ = function () {
 };
 
 class Gesso {
-    constructor() {
-        this._minFetchInterval = 500;
-        this._maxFetchInterval = 60 * 1000;
-        this._fetchStates = new Map(); // By path
+  constructor () {
+    this._minFetchInterval = 500;
+    this._maxFetchInterval = 60 * 1000;
+    this._fetchStates = new Map(); // By path
+  }
+
+  openRequest (method, url, loadHandler) {
+    const request = new XMLHttpRequest();
+
+    request.open(method, url);
+
+    if (loadHandler != null) {
+      request.addEventListener('load', loadHandler);
     }
 
-    openRequest(method, url, loadHandler) {
-        let request = new XMLHttpRequest();
+    return request;
+  }
 
-        request.open(method, url);
+  _getFetchState (path) {
+    let state = this._fetchStates[path];
 
-        if (loadHandler != null) {
-            request.addEventListener("load", loadHandler);
-        }
+    if (state == null) {
+      state = {
+        currentInterval: null,
+        currentTimeoutId: null,
+        failedAttempts: 0,
+        etag: null,
+        timestamp: null
+      };
 
-        return request;
+      this._fetchStates[path] = state;
     }
 
-    _getFetchState(path) {
-        let state = this._fetchStates[path];
+    return state;
+  }
 
-        if (state == null) {
-            state = {
-                currentInterval: null,
-                currentTimeoutId: null,
-                failedAttempts: 0,
-                etag: null,
-                timestamp: null
-            };
+  fetch (path, dataHandler) {
+    console.log('Fetching data from', path);
 
-            this._fetchStates[path] = state;
-        }
+    const state = this._getFetchState(path);
 
-        return state;
+    const request = this.openRequest('GET', path, (event) => {
+      if (event.target.status >= 200 && event.target.status < 300) {
+        state.failedAttempts = 0;
+        state.etag = event.target.getResponseHeader('ETag');
+
+        dataHandler(JSON.parse(event.target.responseText));
+      } else if (event.target.status == 304) {
+        state.failedAttempts = 0;
+      }
+
+      state.timestamp = new Date().getTime();
+    });
+
+    request.addEventListener('error', (event) => {
+      console.log('Fetch failed');
+      state.failedAttempts++;
+    });
+
+    const etag = state.etag;
+
+    if (etag) {
+      request.setRequestHeader('If-None-Match', etag);
     }
 
-    fetch(path, dataHandler) {
-        console.log("Fetching data from", path);
+    request.send();
 
-        let state = this._getFetchState(path);
+    return state;
+  }
 
-        let request = this.openRequest("GET", path, (event) => {
-            if (event.target.status >= 200 && event.target.status < 300) {
-                state.failedAttempts = 0;
-                state.etag = event.target.getResponseHeader("ETag");
+  fetchPeriodically (path, dataHandler) {
+    const state = this._getFetchState(path);
 
-                dataHandler(JSON.parse(event.target.responseText));
-            } else if (event.target.status == 304) {
-                state.failedAttempts = 0;
-            }
+    clearTimeout(state.currentTimeoutId);
+    state.currentInterval = this._minFetchInterval;
 
-            state.timestamp = new Date().getTime();
-        });
+    this._doFetchPeriodically(path, dataHandler, state);
 
-        request.addEventListener("error", (event) => {
-            console.log("Fetch failed");
-            state.failedAttempts++;
-        });
+    return state;
+  }
 
-        let etag = state.etag;
-
-        if (etag) {
-            request.setRequestHeader("If-None-Match", etag);
-        }
-
-        request.send();
-
-        return state;
-    }
-
-    fetchPeriodically(path, dataHandler) {
-        let state = this._getFetchState(path);
-
-        clearTimeout(state.currentTimeoutId);
-        state.currentInterval = this._minFetchInterval;
-
-        this._doFetchPeriodically(path, dataHandler, state);
-
-        return state;
-    }
-
-    _doFetchPeriodically(path, dataHandler, state) {
-        if (state.currentInterval >= this._maxFetchInterval) {
-            setInterval(() => {
-                this.fetch(path, dataHandler);
-            }, this._maxFetchInterval);
-
-            return;
-        }
-
-        state.currentTimeoutId = setTimeout(() => {
-            this._doFetchPeriodically(path, dataHandler, state);
-        }, state.currentInterval);
-
-        state.currentInterval = Math.min(state.currentInterval * 2, this._maxFetchInterval);
-
+  _doFetchPeriodically (path, dataHandler, state) {
+    if (state.currentInterval >= this._maxFetchInterval) {
+      setInterval(() => {
         this.fetch(path, dataHandler);
+      }, this._maxFetchInterval);
+
+      return;
     }
 
-    parseQueryString(str) {
-        if (str.startsWith("?")) {
-            str = str.slice(1);
-        }
+    state.currentTimeoutId = setTimeout(() => {
+      this._doFetchPeriodically(path, dataHandler, state);
+    }, state.currentInterval);
 
-        let qvars = str.split(/[&;]/);
-        let obj = {};
+    state.currentInterval = Math.min(state.currentInterval * 2, this._maxFetchInterval);
 
-        for (let i = 0; i < qvars.length; i++) {
-            let [name, value] = qvars[i].split("=", 2);
+    this.fetch(path, dataHandler);
+  }
 
-            name = decodeURIComponent(name);
-            value = decodeURIComponent(value);
-
-            obj[name] = value;
-        }
-
-        return obj;
+  parseQueryString (str) {
+    if (str.startsWith('?')) {
+      str = str.slice(1);
     }
 
-    emitQueryString(obj) {
-        let tokens = [];
+    const qvars = str.split(/[&;]/);
+    const obj = {};
 
-        for (let name in obj) {
-            if (!obj.hasOwnProperty(name)) {
-                continue;
-            }
+    for (let i = 0; i < qvars.length; i++) {
+      let [name, value] = qvars[i].split('=', 2);
 
-            let value = obj[name];
+      name = decodeURIComponent(name);
+      value = decodeURIComponent(value);
 
-            name = decodeURIComponent(name);
-            value = decodeURIComponent(value);
-
-            tokens.push(name + "=" + value);
-        }
-
-        return tokens.join(";");
+      obj[name] = value;
     }
 
-    createElement(parent, tag, options) {
-        let elem = document.createElement(tag);
+    return obj;
+  }
 
-        if (parent != null) {
-            parent.appendChild(elem);
-        }
+  emitQueryString (obj) {
+    const tokens = [];
 
-        if (options != null) {
-            if (typeof options === "string" || typeof options === "number") {
-                this.createText(elem, options);
-            } else if (typeof options === "object") {
-                if (options.hasOwnProperty("text")) {
-                    this.createText(elem, options["text"]);
-                    delete options["text"];
-                }
+    for (let name in obj) {
+      if (!obj.hasOwnProperty(name)) {
+        continue;
+      }
 
-                for (let key of Object.keys(options)) {
-                    elem.setAttribute(key, options[key]);
-                }
-            } else {
-                throw `illegal argument: ${options}`;
-            }
-        }
+      let value = obj[name];
 
-        return elem;
+      name = decodeURIComponent(name);
+      value = decodeURIComponent(value);
+
+      tokens.push(`${name}=${value}`);
     }
 
-    createText(parent, text) {
-        let node = document.createTextNode(text);
+    return tokens.join(';');
+  }
 
-        if (parent != null) {
-            parent.appendChild(node);
-        }
+  createElement (parent, tag, options) {
+    const elem = document.createElement(tag);
 
-        return node;
+    if (parent != null) {
+      parent.appendChild(elem);
     }
 
-    _setSelector(elem, selector) {
-        if (selector == null) {
-            return;
+    if (options != null) {
+      if (typeof options === 'string' || typeof options === 'number') {
+        this.createText(elem, options);
+      } else if (typeof options === 'object') {
+        if (options.hasOwnProperty('text')) {
+          this.createText(elem, options.text);
+          delete options.text;
         }
 
-        if (selector.startsWith("#")) {
-            elem.setAttribute("id", selector.slice(1));
-        } else {
-            elem.setAttribute("class", selector);
+        for (const key of Object.keys(options)) {
+          elem.setAttribute(key, options[key]);
         }
+      } else {
+        throw `illegal argument: ${options}`;
+      }
     }
 
-    createDiv(parent, selector, options) {
-        let elem = this.createElement(parent, "div", options);
+    return elem;
+  }
 
-        this._setSelector(elem, selector);
+  createText (parent, text) {
+    const node = document.createTextNode(text);
 
-        return elem;
+    if (parent != null) {
+      parent.appendChild(node);
     }
 
-    createSpan(parent, selector, options) {
-        let elem = this.createElement(parent, "span", options);
+    return node;
+  }
 
-        this._setSelector(elem, selector);
-
-        return elem;
+  _setSelector (elem, selector) {
+    if (selector == null) {
+      return;
     }
 
-    createLink(parent, href, options) {
-        let elem = this.createElement(parent, "a", options);
+    if (selector.startsWith('#')) {
+      elem.setAttribute('id', selector.slice(1));
+    } else {
+      elem.setAttribute('class', selector);
+    }
+  }
 
-        if (href != null) {
-            elem.setAttribute("href", href);
-        }
+  createDiv (parent, selector, options) {
+    const elem = this.createElement(parent, 'div', options);
 
-        return elem;
+    this._setSelector(elem, selector);
+
+    return elem;
+  }
+
+  createSpan (parent, selector, options) {
+    const elem = this.createElement(parent, 'span', options);
+
+    this._setSelector(elem, selector);
+
+    return elem;
+  }
+
+  createLink (parent, href, options) {
+    const elem = this.createElement(parent, 'a', options);
+
+    if (href != null) {
+      elem.setAttribute('href', href);
     }
 
-    createTable(parent, headings, rows, options) {
-        let elem = this.createElement(parent, "table", options);
-        let thead = this.createElement(elem, "thead");
-        let tbody = this.createElement(elem, "tbody");
+    return elem;
+  }
 
-        if (headings) {
-            let tr = this.createElement(thead, "tr");
+  createTable (parent, headings, rows, options) {
+    const elem = this.createElement(parent, 'table', options);
+    const thead = this.createElement(elem, 'thead');
+    const tbody = this.createElement(elem, 'tbody');
 
-            for (let heading of headings) {
-                this.createElement(tr, "th", heading);
-            }
-        }
+    if (headings) {
+      const tr = this.createElement(thead, 'tr');
 
-        for (let row of rows) {
-            let tr = this.createElement(tbody, "tr");
-
-            for (let cell of row) {
-                this.createElement(tr, "td", cell);
-            }
-        }
-
-        return elem;
+      for (const heading of headings) {
+        this.createElement(tr, 'th', heading);
+      }
     }
 
-    replaceElement(oldElement, newElement) {
-        oldElement.parentNode.replaceChild(newElement, oldElement);
+    for (const row of rows) {
+      const tr = this.createElement(tbody, 'tr');
+
+      for (const cell of row) {
+        this.createElement(tr, 'td', cell);
+      }
     }
 
-    formatDuration(milliseconds) {
-        if (milliseconds == null) {
-            return "-";
-        }
+    return elem;
+  }
 
-        let seconds = Math.round(milliseconds / 1000);
-        let minutes = Math.round(milliseconds / 60 / 1000);
-        let hours = Math.round(milliseconds / 3600 / 1000);
-        let days = Math.round(milliseconds / 86400 / 1000);
-        let weeks = Math.round(milliseconds / 432000 / 1000);
+  replaceElement (oldElement, newElement) {
+    oldElement.parentNode.replaceChild(newElement, oldElement);
+  }
 
-        if (weeks >= 2) {
-            return `${weeks} weeks`;
-        }
-
-        if (days >= 2) {
-            return `${days} days`;
-        }
-
-        if (hours >= 1) {
-            return `${hours} hours`;
-        }
-
-        if (minutes >= 1) {
-            return `${minutes} minutes`;
-        }
-
-        if (seconds === 1) {
-            return "1 second";
-        }
-
-        return `${seconds} seconds`;
+  formatDuration (milliseconds) {
+    if (milliseconds == null) {
+      return '-';
     }
+
+    const seconds = Math.round(milliseconds / 1000);
+    const minutes = Math.round(milliseconds / 60 / 1000);
+    const hours = Math.round(milliseconds / 3600 / 1000);
+    const days = Math.round(milliseconds / 86400 / 1000);
+    const weeks = Math.round(milliseconds / 432000 / 1000);
+
+    if (weeks >= 2) {
+      return `${weeks} weeks`;
+    }
+
+    if (days >= 2) {
+      return `${days} days`;
+    }
+
+    if (hours >= 1) {
+      return `${hours} hours`;
+    }
+
+    if (minutes >= 1) {
+      return `${minutes} minutes`;
+    }
+
+    if (seconds === 1) {
+      return '1 second';
+    }
+
+    return `${seconds} seconds`;
+  }
 }

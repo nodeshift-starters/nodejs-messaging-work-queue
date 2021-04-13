@@ -19,110 +19,110 @@
  *
  */
 
-"use strict";
+'use strict';
 
 const gesso = new Gesso();
 
 class Application {
-    constructor() {
-        this.data = null;
+  constructor () {
+    this.data = null;
 
-        window.addEventListener("statechange", (event) => {
-            this.renderResponses();
-            this.renderWorkers();
-        });
+    window.addEventListener('statechange', (event) => {
+      this.renderResponses();
+      this.renderWorkers();
+    });
 
-        window.addEventListener("load", (event) => {
-            this.fetchDataPeriodically();
+    window.addEventListener('load', (event) => {
+      this.fetchDataPeriodically();
 
-            $("#requests").addEventListener("submit", (event) => {
-                this.sendRequest(event.target);
-                this.fetchDataPeriodically();
-            });
-        });
+      $('#requests').addEventListener('submit', (event) => {
+        this.sendRequest(event.target);
+        this.fetchDataPeriodically();
+      });
+    });
+  }
+
+  fetchDataPeriodically () {
+    gesso.fetchPeriodically('/api/data', (data) => {
+      this.data = data;
+      window.dispatchEvent(new Event('statechange'));
+    });
+  }
+
+  sendRequest (form) {
+    console.log('Sending request');
+
+    const request = gesso.openRequest('POST', '/api/send-request', (event) => {
+      if (event.target.status >= 200 && event.target.status < 300) {
+        this.fetchDataPeriodically();
+      }
+    });
+
+    const data = {
+      text: form.text.value,
+      uppercase: form.uppercase.checked,
+      reverse: form.reverse.checked
+    };
+
+    const json = JSON.stringify(data);
+
+    request.setRequestHeader('Content-Type', 'application/json');
+    request.send(json);
+
+    form.text.value = '';
+  }
+
+  renderResponses () {
+    if (this.data.requestIds.length === 0) {
+      return;
     }
 
-    fetchDataPeriodically() {
-        gesso.fetchPeriodically("/api/data", (data) => {
-            this.data = data;
-            window.dispatchEvent(new Event("statechange"));
-        });
+    console.log('Rendering responses');
+
+    const div = gesso.createDiv(null, '#responses');
+
+    for (const requestId of this.data.requestIds.reverse()) {
+      const response = this.data.responses[requestId];
+
+      if (response == null) {
+        continue;
+      }
+
+      const item = gesso.createDiv(div, 'response');
+      gesso.createDiv(item, 'worker', response.workerId);
+      gesso.createDiv(item, 'text', response.text);
     }
 
-    sendRequest(form) {
-        console.log("Sending request");
+    gesso.replaceElement($('#responses'), div);
+  }
 
-        let request = gesso.openRequest("POST", "/api/send-request", (event) => {
-            if (event.target.status >= 200 && event.target.status < 300) {
-                this.fetchDataPeriodically();
-            }
-        });
+  renderWorkers () {
+    console.log('Rendering workers');
 
-        let data = {
-            text: form.text.value,
-            uppercase: form.uppercase.checked,
-            reverse: form.reverse.checked,
-        };
+    if (Object.keys(this.data.workers).length === 0) {
+      const div = gesso.createDiv(null, '#workers');
+      const span = gesso.createSpan(div, 'placeholder', 'None');
 
-        let json = JSON.stringify(data);
+      gesso.replaceElement($('#workers'), div);
 
-        request.setRequestHeader("Content-Type", "application/json");
-        request.send(json);
-
-        form.text.value = "";
+      return;
     }
 
-    renderResponses() {
-        if (this.data.requestIds.length === 0) {
-            return;
-        }
+    const headings = ['ID', 'Updated', 'Requests processed', 'Processing errors'];
+    const rows = [];
+    const now = new Date().getTime();
 
-        console.log("Rendering responses");
+    for (const workerId in this.data.workers) {
+      const update = this.data.workers[workerId];
+      const time = new Date(update.timestamp).toLocaleString();
+      const requestsProcessed = update.requestsProcessed;
+      const processingErrors = update.processingErrors;
 
-        let div = gesso.createDiv(null, "#responses");
-
-        for (let requestId of this.data.requestIds.reverse()) {
-            let response = this.data.responses[requestId];
-
-            if (response == null) {
-                continue;
-            }
-
-            let item = gesso.createDiv(div, "response");
-            gesso.createDiv(item, "worker", response.workerId);
-            gesso.createDiv(item, "text", response.text);
-        }
-
-        gesso.replaceElement($("#responses"), div);
+      rows.push([workerId, time, requestsProcessed, processingErrors]);
     }
 
-    renderWorkers() {
-        console.log("Rendering workers");
+    const table = gesso.createTable(null, headings, rows, { id: 'workers' });
 
-        if (Object.keys(this.data.workers).length === 0) {
-            let div = gesso.createDiv(null, "#workers");
-            let span = gesso.createSpan(div, "placeholder", "None");
-
-            gesso.replaceElement($("#workers"), div);
-
-            return;
-        }
-
-        let headings = ["ID", "Updated", "Requests processed", "Processing errors"];
-        let rows = [];
-        let now = new Date().getTime();
-
-        for (let workerId in this.data.workers) {
-            let update = this.data.workers[workerId];
-            let time = new Date(update.timestamp).toLocaleString();
-            let requestsProcessed = update.requestsProcessed;
-            let processingErrors = update.processingErrors;
-
-            rows.push([workerId, time, requestsProcessed, processingErrors]);
-        }
-
-        let table = gesso.createTable(null, headings, rows, {id: "workers"});
-
-        gesso.replaceElement($("#workers"), table);
-    }
+    gesso.replaceElement($('#workers'), table);
+  }
 }

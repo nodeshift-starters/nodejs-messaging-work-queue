@@ -32,8 +32,8 @@ const amqpPort = process.env.MESSAGING_SERVICE_PORT || 5672;
 const amqpUser = process.env.MESSAGING_SERVICE_USER || 'work-queue';
 const amqpPassword = process.env.MESSAGING_SERVICE_PASSWORD || 'work-queue';
 
-const id = 'frontend-nodejs-' + crypto.randomBytes(2).toString('hex');
-const container = rhea.create_container({id});
+const id = `frontend-nodejs-${crypto.randomBytes(2).toString('hex')}`;
+const container = rhea.create_container({ id });
 
 let requestSender = null;
 let responseReceiver = null;
@@ -65,7 +65,7 @@ container.on('connection_open', event => {
   console.log(`${id}: Connected to AMQP messaging service at ${amqpHost}:${amqpPort}`);
 
   requestSender = event.connection.open_sender('work-queue/requests');
-  responseReceiver = event.connection.open_receiver({source: {dynamic: true}});
+  responseReceiver = event.connection.open_receiver({ source: { dynamic: true } });
   workerUpdateReceiver = event.connection.open_receiver('work-queue/worker-updates');
 });
 
@@ -119,21 +119,21 @@ container.connect(opts);
 const app = express();
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/', express.static(path.join(__dirname, 'public')));
-// Expose the license.html at http[s]://[host]:[port]/licences/licenses.html
+// Expose the license.html at http[s]://[host]:[port]/licenses/licenses.html
 app.use('/licenses', express.static(path.join(__dirname, 'licenses')));
 
 app.use('/api/greeting', (request, response) => {
   const name = request.query ? request.query.name : undefined;
-  response.send({content: `Hello, ${name || 'World!'}`});
+  response.send({ content: `Hello, ${name || 'World!'}` });
 });
 
 probe(app);
 
 app.post('/api/send-request', (req, resp) => {
   const message = {
-    message_id: id + '/' + requestSequence++,
+    message_id: `${id}/${requestSequence++}`,
     application_properties: {
       uppercase: req.body.uppercase,
       reverse: req.body.reverse
@@ -150,7 +150,7 @@ app.post('/api/send-request', (req, resp) => {
 });
 
 app.get('/api/data', (req, resp) => {
-  resp.json({requestIds, responses, workers});
+  resp.json({ requestIds, responses, workers });
 });
 
 module.exports = app;

@@ -4,35 +4,14 @@
   "description": "A sample Node.js app that processes requests",
   "license": "Apache-2.0",
   "scripts": {
-    "test": "tape test/*.js | tap-spec",
-    "lint": "xo",
-    "coverage": "nyc npm test",
-    "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
-    "ci": "npm run lint && npm run coveralls",
+    "pretest": "eslint --ignore-path ../.gitignore .",
+    "test": "node -e \"console.log('no tests found.')\"",
     "prepublish": "license-reporter report -s",
     "openshift": "nodeshift --dockerImage=registry.access.redhat.com/ubi8/nodejs-14:latest",
     "postinstall": "license-reporter report -s && license-reporter save -s --xml licenses.xml",
     "start": "node ."
   },
   "main": "./bin/www",
-  "xo": {
-    "space": 2,
-    "rules": {
-      "space-before-function-paren": [
-        "error",
-        "always"
-      ],
-      "camelcase": [
-        "off"
-      ],
-      "prefer-destructuring": [
-        "off"
-      ]
-    },
-    "ignores": [
-      "public/**"
-    ]
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/nodeshift-starters/nodejs-messaging-work-queue.git"
@@ -51,7 +30,7 @@
   "dependencies": {
     "body-parser": "~1.19.0",
     "express": "~4.17.1",
-    "kube-probe": "~0.4.0",
+    "kube-probe": "~1.0.2",
     "license-reporter": "^1.3.0",
     "pino": "^6.11.2",
     "pino-debug": "^2.0.0",
@@ -59,7 +38,13 @@
     "rhea": "^1.0.0"
   },
   "devDependencies": {
-    "nodeshift": "~6.0.2",
-    "xo": "^0.32.1"
+    "eslint": "^7.24.0",
+    "eslint-config-semistandard": "^15.0.1",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-standard": "^5.0.0",
+    "nodeshift": "~8.1.1"
   }
 }

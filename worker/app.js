@@ -32,8 +32,8 @@ const amqpPassword = process.env.MESSAGING_SERVICE_PASSWORD || 'work-queue';
 
 // AMQP
 
-const id = 'worker-nodejs-' + crypto.randomBytes(2).toString('hex');
-const container = rhea.create_container({id});
+const id = `worker-nodejs-${crypto.randomBytes(2).toString('hex')}`;
+const container = rhea.create_container({ id });
 
 let workerUpdateSender = null;
 let requestsProcessed = 0;
@@ -49,7 +49,7 @@ function processRequest (request) {
   }
 
   if (reverse) {
-    text = text.split("").reverse().join("");
+    text = text.split('').reverse().join('');
   }
 
   return text;
@@ -125,7 +125,7 @@ container.connect(opts);
 
 const app = express();
 
-// Expose the license.html at http[s]://[host]:[port]/licences/licenses.html
+// Expose the license.html at http[s]://[host]:[port]/licenses/licenses.html
 app.use('/licenses', express.static(path.join(__dirname, 'licenses')));
 
 probe(app);
