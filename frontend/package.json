@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/nodeshift-starters/nodejs-messaging-work-queue",
   "dependencies": {
-    "body-parser": "~1.19.0",
+    "body-parser": "~1.19.1",
     "debug": "^4.3.3",
     "express": "~4.17.1",
     "pino": "^7.5.1",
