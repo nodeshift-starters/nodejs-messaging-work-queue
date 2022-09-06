@@ -19,6 +19,8 @@
 
 'use strict';
 
+require('./tracing.js');
+
 const path = require('path');
 const crypto = require('crypto');
 const express = require('express');

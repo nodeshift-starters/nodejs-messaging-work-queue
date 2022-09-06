@@ -1,34 +1,68 @@
-# Messaging Work Queue Example for Node.js
+## OpenTelemetry with OpenShift Distributed Tracing Platform
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/nodeshift-starters/nodejs-messaging-work-queue.svg)](https://greenkeeper.io/)
+Start OpenShift local and create a new project.
 
-## Purpose
-
-This example application demonstrates how to dispatch tasks to a scalable
-set of worker processes using a message queue. It uses the AMQP 1.0
-message protocol to send and receive messages.
-
-## Prerequisites
-
-* Node.js version 12, 14 or 16
-
-* The user has access to an OpenShift instance and is logged in.
-
-* The user has selected a project in which the frontend and backend
-  processes will be deployed.
-
-## Deployment
-
-Run the following commands to configure and deploy the applications.
-
-```bash
-$ oc create -f service.amqp.yaml
-
-$ ./start-openshift.sh
 ```
-## Modules
+$ crc setup
+$ crc start
+$ eval $(crc oc-env)
+$ oc login -u developer
+$ oc new-project opentelemetry-js-rhosdt
+```
+### Install the OpenShift Distributed Tracing Platform Operator
 
-The `frontend` module serves the web interface and communicates with
-workers in the backend.
+1. Login as kubeadmin
+2. Go to OperatorHub
+3. Search for Jaeger
+4. Click on `Red Hat OpenShift distributed tracing platform` and follow the instructions to install.
 
-The `worker` module implements the worker service in the backend.
+![kubeadmin-login-operatorhub](images/kubeadmin.png)
+
+5. Login as developer, go to Topology and add the Jaeger Operator to the project.
+
+![operator](images/operator.png)
+
+![jaeger](images/jaeger.png)
+
+![topology](images/topology.png)
+
+6. Configure the URL for the JaegerExporter endpoint
+
+```
+❯ oc get svc
+NAME                                            TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)                                                    AGE
+jaeger-all-in-one-inmemory-agent                ClusterIP   None           <none>        5775/UDP,5778/TCP,6831/UDP,6832/UDP                        2m16s
+jaeger-all-in-one-inmemory-collector            ClusterIP   10.217.5.57    <none>        9411/TCP,14250/TCP,14267/TCP,14268/TCP,4317/TCP,4318/TCP   2m16s
+jaeger-all-in-one-inmemory-collector-headless   ClusterIP   None           <none>        9411/TCP,14250/TCP,14267/TCP,14268/TCP,4317/TCP,4318/TCP   2m16s
+jaeger-all-in-one-inmemory-query                ClusterIP   10.217.5.219   <none>        443/TCP,16685/TCP                                          2m16s
+```
+
+We are going to use `jaeger-all-in-one-inmemory-collector` + 
+our namespace service `opentelemetry-js-rhosdt.svc` for the
+ `JaegerExporter` endpoint. 
+ 
+Resulting in the following:
+
+(content from the [tracing.js](./tracing.js) file)
+```js
+const exporter = new JaegerExporter({
+  endpoint: 'http://jaeger-all-in-one-inmemory-collector.opentelemetry-js-rhosdt.svc:14268/api/traces'
+});
+```
+
+7. Deploy the example to OpenShift local
+
+```
+$ oc create -f service.amqp.yaml
+$ cd frontend
+$ npm install
+$ npm run openshift
+$ cd ../worker
+$ npm install
+$ npm run openshift
+```
+
+8. When you login on Jaeger UI you can see the result like this:
+
+![result](images/result.png)
+

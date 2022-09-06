@@ -18,6 +18,8 @@
  *
  */
 
+require('./tracing.js');
+
 const path = require('path');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
