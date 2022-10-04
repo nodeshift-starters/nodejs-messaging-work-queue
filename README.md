@@ -20,8 +20,8 @@ message protocol to send and receive messages.
 Run the following commands to configure and deploy the applications.
 
 ```bash
+$ oc new-project my-example-project
 $ oc create -f service.amqp.yaml
-
 $ ./start-openshift.sh
 ```
 ## Modules
