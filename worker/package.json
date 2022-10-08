@@ -29,7 +29,7 @@
   "homepage": "https://github.com/nodeshift-starters/nodejs-messaging-work-queue",
   "dependencies": {
     "@opentelemetry/api": "^1.2.0",
-    "@opentelemetry/exporter-jaeger": "^1.6.0",
+    "@opentelemetry/exporter-jaeger": "^1.7.0",
     "@opentelemetry/instrumentation": "^0.32.0",
     "@opentelemetry/instrumentation-express": "^0.31.0",
     "@opentelemetry/instrumentation-http": "^0.32.0",
