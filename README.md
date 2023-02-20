@@ -8,7 +8,7 @@ message protocol to send and receive messages.
 
 ## Prerequisites
 
-* Node.js version 16
+* Node.js version 16 or Greater
 
 * The user has access to an OpenShift instance and is logged in.
 
