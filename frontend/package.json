@@ -6,8 +6,8 @@
   "scripts": {
     "pretest": "eslint --ignore-path ../.gitignore .",
     "test": "node -e \"console.log('no tests found.')\"",
-    "openshift": "nodeshift --dockerImage=registry.access.redhat.com/ubi8/nodejs-16",
-    "openshift:enable:trace": "nodeshift --deploy.env NODE_OPTIONS='--require ./tracing.js' --dockerImage=registry.access.redhat.com/ubi8/nodejs-16",
+    "openshift": "nodeshift --dockerImage=registry.access.redhat.com/ubi8/nodejs-18",
+    "openshift:enable:trace": "nodeshift --deploy.env NODE_OPTIONS='--require ./tracing.js' --dockerImage=registry.access.redhat.com/ubi8/nodejs-18",
     "start": "node ."
   },
   "main": "./bin/www",
