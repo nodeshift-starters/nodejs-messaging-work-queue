@@ -46,6 +46,6 @@
   "devDependencies": {
     "eslint": "^8.23.0",
     "eslint-config-semistandard": "^17.0.0",
-    "nodeshift": "~8.7.0"
+    "nodeshift": "~11.1.0"
   }
 }
